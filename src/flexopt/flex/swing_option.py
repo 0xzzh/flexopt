@@ -20,22 +20,31 @@ def _validate_contract_spec(number_of_exercises, dcq, min_dcq, max_dcq):
         raise ValueError('Paramter incorrect: min_dcq = {min_dcq}, dcq = {dcq}, max_dcq = {max_dcq}. The relationship should be min_dcq <= dcq <= max_dcq'.format(min_dcq=min_dcq, dcq=dcq, max_dcq=max_dcq))
 
 
-def dynamic_programming_optimization(sim_prices, strike, df_per_time_step, polyfit_degree, number_of_exercises, dcq, min_dcq, max_dcq):
-    """Calculate swing price and dispatching plan by backward dynamic programming optimization from time T (contract expiry time) to time 0 (contract start time)
+def dynamic_programming_optimization(prices, strike, number_of_exercises, dcq, min_dcq, max_dcq, r, steps_per_year, polyfit_degree):
+    """Calculates swing value and exercise schedule by the approximate dynamic programming method.
+    
+    Retrieves price scenarios, swing option specifications, and optimization parameters. Loops backwards from swing maturity day
+    to swing start day. 
+    
+    At each time step compares the following two statements to decide whether to exercise:
+    - Exercise value of the current time step + continuation value of the next time step with one fewer exercise opportunity;
+    - No exercise at the current time step (value = 0) + continuation value of the next time step with the same exercise opportunity. 
 
     Args:
-        sim_prices: Simulated prices scenarios of shape [steps x trials].
+        prices: Price scenarios of shape (contract period time steps + 1, trials). 
+          The prices at time step 0 is prior to the contract period and not counted in the exercise schedule
         strike: The exercise price of the swing contract.
-        df_per_time_step: Discount factor of continuation values per time step
-        polyfit_degree: Degree of fitting the polynomial model.
         number_of_exercises: The number of exercise opportunities during the contract period.
         dcq: Daily contract quantities.
         min_dcq: Minimum daily contract quantities.
         max_dcq: Maximum daily contract quantities.
-
+        r: Risk-free rate.
+        steps_per_year: Trading days (or other time units, for example hours) per year.
+        polyfit_degree: Degree of fitting the polynomial model at each time step.
+        
     Returns:
-        The first return value: Swing price
-        The second return value: A numpy array of shape [steps x trials] to corresponding exercising / dispatching plan.
+        The first return value: swing_value
+        The second return value: exercise_schedules of shape (contract period time steps, trials), exercising amount per time step per price scenario.
 
     Raises:
         ValueError: An error occurred when input paramters are out of range.
@@ -46,7 +55,10 @@ def dynamic_programming_optimization(sim_prices, strike, df_per_time_step, polyf
     """
     _validate_contract_spec(number_of_exercises=number_of_exercises, dcq=dcq, min_dcq=min_dcq, max_dcq=max_dcq)
     
-    steps, trials = sim_prices.shape
+    dt = 1.0 / steps_per_year
+    df_per_time_step = np.exp(-r * dt)
+    
+    steps, trials = prices.shape
     
     # Actions and states
     qty_action_arr = np.array([min_dcq - dcq, max_dcq - dcq])  # [dispatch min, dispatch max]
@@ -56,7 +68,7 @@ def dynamic_programming_optimization(sim_prices, strike, df_per_time_step, polyf
     value_table = np.zeros(shape=(len(remaining_exercise_state_list), trials))  # Shape = (number_of_exercises+1, trials)
 
     for t in range(steps-1, 0, -1):  # From steps-1 (t=expiry) to 1 (t=start + 1)
-        curr_prices = sim_prices[t, :]
+        curr_prices = prices[t, :]
 
         # Calculate optimal exercise values at the current time step
         payoff_arr = np.zeros(shape=(len(qty_action_arr), trials))  # Payoffs based on chosen qty; Shape = (qty_action_arr=2, trials)
