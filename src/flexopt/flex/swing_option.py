@@ -71,12 +71,8 @@ def dynamic_programming_optimization(prices, strike, number_of_exercises, dcq, m
         curr_prices = prices[t, :]
 
         # Calculate optimal exercise values at the current time step
-        payoffs = np.zeros(shape=(len(qty_actions), trials))  # Payoffs based on chosen qty; Shape = (qty_actions=2, trials)
-        
-        for action_ind, action_qty in enumerate(qty_actions):
-            payoffs[action_ind, :] = action_qty * (curr_prices - strike)
-        
-        exercise_values = np.nanmax(payoffs, axis=0)  # Shap = (trials, 1)
+        payoffs = np.outer(qty_actions, curr_prices - strike)  # Payoffs based on chosen qty; Shape = (qty_actions=2, trials)
+        exercise_values = np.max(payoffs, axis=0)  # Shape = (trials, 1)
 
         # Fit current prices to the values of the next time step
         next_value_table = df_per_time_step * np.array(value_table) # The value table of t+1 discounted to t
