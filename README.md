@@ -2,7 +2,9 @@
 
 Valuations and optimizations of energy flexibility options in Python.
 
-FlexOpt is the open source part of [FlexArb](www.flexarb.com). FlexArb  is a flexibility optimizer in client browser with the WebAssembly technique. FlexArb is written in C++, with calculation efficiency and data protection in mind. FlexOpt serves as the model prototyping and calculation validation tool for FlexArb.
+FlexOpt is the open source part of [FlexArb](https://www.flexarb.com). FlexArb is a flexibility optimizer in client browser with the WebAssembly technique. FlexArb is written in C++, with calculation efficiency and data protection in mind. 
+
+FlexOpt serves as the model prototyping and calculation validation tool for FlexArb.
 
 The FlexOpt code base is clean and simple. It is written in the Functional Programming style. Users can easily compose functions in the library for the tasks of valuations and optimizations.
 
