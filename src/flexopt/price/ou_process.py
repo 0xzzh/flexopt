@@ -57,9 +57,10 @@ def simulate(s, kappa, theta, sigma, steps_per_year, steps, trials, random_seed)
     x = np.zeros(shape=(steps + 1, trials))
     x[0, :] = s
 
+    df = np.exp(-kappa * dt)
     std = np.sqrt(sigma**2 / (2 * kappa) * (1 - np.exp(-2 * kappa * dt)))
     
     for t in range(0, steps):
-        x[t+1, :] = theta + np.exp(-kappa * dt) * (x[t, :] - theta) + std * epsilon[t, :]
+        x[t+1, :] = theta + df * (x[t, :] - theta) + std * epsilon[t, :]
 
     return x
