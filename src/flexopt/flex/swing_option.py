@@ -61,38 +61,38 @@ def dynamic_programming_optimization(prices, strike, number_of_exercises, dcq, m
     steps, trials = prices.shape
     
     # Actions and states
-    qty_action_arr = np.array([min_dcq - dcq, max_dcq - dcq])  # [dispatch min, dispatch max]
-    remaining_exercise_state_list = list(range(0, number_of_exercises + 1))  # [0, ..., number_of_exercises]
+    qty_actions = np.array([min_dcq - dcq, max_dcq - dcq])  # [dispatch min, dispatch max]
+    remaining_exercise_states = list(range(0, number_of_exercises + 1))  # [0, ..., number_of_exercises]
     
     # Table to update in each time step
-    value_table = np.zeros(shape=(len(remaining_exercise_state_list), trials))  # Shape = (number_of_exercises+1, trials)
+    value_table = np.zeros(shape=(len(remaining_exercise_states), trials))  # Shape = (number_of_exercises+1, trials)
 
     for t in range(steps-1, 0, -1):  # From steps-1 (t=expiry) to 1 (t=start + 1)
         curr_prices = prices[t, :]
 
         # Calculate optimal exercise values at the current time step
-        payoff_arr = np.zeros(shape=(len(qty_action_arr), trials))  # Payoffs based on chosen qty; Shape = (qty_action_arr=2, trials)
+        payoffs = np.zeros(shape=(len(qty_actions), trials))  # Payoffs based on chosen qty; Shape = (qty_actions=2, trials)
         
-        for action_ind, action_qty in enumerate(qty_action_arr):
-            payoff_arr[action_ind, :] = action_qty * (curr_prices - strike)
+        for action_ind, action_qty in enumerate(qty_actions):
+            payoffs[action_ind, :] = action_qty * (curr_prices - strike)
         
-        exercise_value_arr = np.nanmax(payoff_arr, axis=0)  # Shap = (trials, 1)
+        exercise_values = np.nanmax(payoffs, axis=0)  # Shap = (trials, 1)
 
         # Fit current prices to the values of the next time step
         next_value_table = df_per_time_step * np.array(value_table) # The value table of t+1 discounted to t
         fitted_next_value_table = np.zeros(shape=next_value_table.shape)
 
         if t < steps - 1:
-            for remaining_exercise_state in remaining_exercise_state_list:
+            for remaining_exercise_state in remaining_exercise_states:
                 model_coef = Polynomial.fit(x=curr_prices, y=next_value_table[remaining_exercise_state, :], deg=polyfit_degree)
                 fitted_next_value_table[remaining_exercise_state, :] = model_coef(curr_prices)
 
         # Update value table based on optimal decision
-        for remaining_exercise_state in remaining_exercise_state_list:
+        for remaining_exercise_state in remaining_exercise_states:
             value_table[remaining_exercise_state, :] = next_value_table[remaining_exercise_state, :]  
 
             if remaining_exercise_state > 0:  # Compare rewards of exercising and not exercising for optimal decision
-                exercise_ind = (exercise_value_arr + fitted_next_value_table[remaining_exercise_state-1, :] > fitted_next_value_table[remaining_exercise_state, :])
-                value_table[remaining_exercise_state, exercise_ind] = exercise_value_arr[exercise_ind] + next_value_table[remaining_exercise_state-1, exercise_ind]
+                exercise_ind = (exercise_values + fitted_next_value_table[remaining_exercise_state-1, :] > fitted_next_value_table[remaining_exercise_state, :])
+                value_table[remaining_exercise_state, exercise_ind] = exercise_values[exercise_ind] + next_value_table[remaining_exercise_state-1, exercise_ind]
                 
     return df_per_time_step * np.mean(value_table)
