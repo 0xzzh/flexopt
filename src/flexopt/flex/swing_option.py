@@ -59,20 +59,25 @@ def dynamic_programming_optimization(prices, strike, number_of_exercises, dcq, m
     df_per_time_step = np.exp(-r * dt)
     
     steps, trials = prices.shape
+
+    # Output
+    exercise_schedules = np.zeros(shape=(steps, trials))
     
     # Actions and states
-    qty_actions = np.array([min_dcq - dcq, max_dcq - dcq])  # [dispatch min, dispatch max]
+    quantity_actions = np.array([min_dcq - dcq, max_dcq - dcq])  # [dispatch min, dispatch max]
     remaining_exercise_states = list(range(0, number_of_exercises + 1))  # [0, ..., number_of_exercises]
     
     # Table to update in each time step
     value_table = np.zeros(shape=(len(remaining_exercise_states), trials))  # Shape = (number_of_exercises+1, trials)
+    exercise_quantity_table = np.zeros(shape=value_table.shape)
 
     for t in range(steps-1, 0, -1):  # From steps-1 (t=expiry) to 1 (t=start + 1)
         curr_prices = prices[t, :]
 
         # Calculate optimal exercise values at the current time step
-        payoffs = np.outer(qty_actions, curr_prices - strike)  # Payoffs based on chosen qty; Shape = (qty_actions=2, trials)
+        payoffs = np.outer(quantity_actions, curr_prices - strike)  # Payoffs based on chosen qty; Shape = (qty_actions=2, trials)
         exercise_values = np.max(payoffs, axis=0)  # Shape = (trials, 1)
+        exercise_quantities = quantity_actions[np.argmax(payoffs, axis=0)]
 
         # Fit current prices to the values of the next time step
         next_value_table = df_per_time_step * np.array(value_table) # The value table of t+1 discounted to t
@@ -86,9 +91,18 @@ def dynamic_programming_optimization(prices, strike, number_of_exercises, dcq, m
         # Update value table based on optimal decision
         for remaining_exercise_state in remaining_exercise_states:
             value_table[remaining_exercise_state, :] = next_value_table[remaining_exercise_state, :]  
+            exercise_quantity_table[remaining_exercise_state, :] = 0
 
             if remaining_exercise_state > 0:  # Compare rewards of exercising and not exercising for optimal decision
                 exercise_ind = (exercise_values + fitted_next_value_table[remaining_exercise_state-1, :] > fitted_next_value_table[remaining_exercise_state, :])
+                
                 value_table[remaining_exercise_state, exercise_ind] = exercise_values[exercise_ind] + next_value_table[remaining_exercise_state-1, exercise_ind]
                 
-    return df_per_time_step * np.mean(value_table)
+                exercise_quantity_table[remaining_exercise_state, exercise_ind] = exercise_quantities[exercise_ind]
+
+        exercise_schedules[t, :] = exercise_quantity_table.mean(axis=0)
+
+    swing_value = df_per_time_step * np.mean(value_table[number_of_exercises])
+    exercise_schedules = exercise_schedules[1:, :]
+
+    return swing_value, exercise_schedules
