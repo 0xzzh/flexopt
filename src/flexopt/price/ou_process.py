@@ -21,7 +21,7 @@ def calibrate_parameters(x, steps_per_year):
 
 
 def simulate(s, kappa, theta, sigma, steps_per_year, steps, trials, random_seed):
-    """Simulate price with Ornstein-Uhlenbeck process
+    """Simulates price with Ornstein-Uhlenbeck process
 
     Args:
         s: Current price.
@@ -33,7 +33,7 @@ def simulate(s, kappa, theta, sigma, steps_per_year, steps, trials, random_seed)
         random_seed: Random seed to generate random numbers.
         
     Returns:
-        A numpy array of [T+1, N] size to corresponding simulated prices.
+        A numpy array of shape (T+1, N) to corresponding simulated prices.
 
         Each row represents one time step. The first row is the current time step with current price s
       

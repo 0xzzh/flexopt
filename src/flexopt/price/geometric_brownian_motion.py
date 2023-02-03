@@ -2,7 +2,7 @@ import numpy as np
 
 
 def simulate(s, r, sigma, steps_per_year, steps, trials, random_seed):
-    """Simulate prices with geometric Brownian motion
+    """Simulates prices with geometric Brownian motion
 
     Args:
         s: Current price.
@@ -14,7 +14,7 @@ def simulate(s, r, sigma, steps_per_year, steps, trials, random_seed):
         random_seed: Random seed to generate random numbers.
       
     Returns:
-        A numpy array of [T+1, N] size to corresponding simulated prices.
+        A numpy array of shape (T+1, N) to corresponding simulated prices.
 
         Each row represents one time step. The first row is the current time step with current price s
       
