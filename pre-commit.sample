@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Setup
+# - Modify "PYTHON_VENV_PATH" and "TEST_PATH" variables in this script
+# - Copy sample file to githooks folder: cp ~/${flexopt}/pre-commit.sample ~/${flexopt}/githooks/pre-commit
+# - Make the hook executable: chmod +x ~/${flexopt}/githooks/pre-commit
+# - Setup git pre-commit hook path: git config core.hooksPath ~/${flexopt}/githooks 
+# - Double check the "hooksPath" field in ~/${flexopt}/.git/config
+
+echo "Running unittest"
+
+PYTHON_VENV_PATH=~/${venv}/bin/python  # Modify this
+TEST_PATH=~/${flexopt}/tests  # Modify this
+
+${PYTHON_VENV_PATH} -m unittest discover --verbose --start-directory ${TEST_PATH} --pattern "test_*.py"
+if (( $? != 0 )); then
+    exit 1
+fi
