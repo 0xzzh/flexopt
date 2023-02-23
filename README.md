@@ -1,8 +1,8 @@
 # FlexOpt
 
-Valuations and optimizations of energy flexibility options in Python.
+Valuations and optimizations of energy flexibility options using Python.
 
-The FlexOpt code base is clean and simple. It is written in the Functional Programming style. Users can easily compose functions in the library for the tasks of valuations and optimizations.
+The FlexOpt code base is clean and simple, written in the functional programming style. Users can easily compose functions in the library for valuations and optimizations tasks.
 
 ## Installation
 
